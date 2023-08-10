@@ -1,9 +1,10 @@
 from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException
+from random import random
 from bs4 import BeautifulSoup
 import time
 import sqlite3 as sl
 import datetime
-
 
 GOAL_PRICE = 500
 
@@ -55,10 +56,13 @@ def start_parse(driver, page_source = 'd'):
 
 
 def put_checkbox(driver):
-    xPath = "//label[@for='auto_get_float_and_sticker_wear']"
-    time.sleep(6)
-    span_checkbox = driver.find_element('xpath', xPath)
-    span_checkbox.click()
+    try:
+        xPath = "//label[@for='auto_get_float_and_sticker_wear']"
+        time.sleep(6)
+        span_checkbox = driver.find_element('xpath', xPath)
+        span_checkbox.click()
+    except NoSuchElementException:
+        print("элемент checkbox не найден")
 
 def push_sticks(driver, div, sum_price, skin_name):
     #в sticks ищем div без класса, чтобы не дублировались наклейки
@@ -66,46 +70,46 @@ def push_sticks(driver, div, sum_price, skin_name):
     sticks = stickss.find_all("div", {"class": "tooltip__row"}) #.find_all("div", {"class": "sih-images"})
     name_tuple = ()
     wear_tuple = ()
-    stick_count = 0
+    stick_count = 0 # если количество наклеек будет меньше 4, то для базы данных добавим пустые
 
     buy = True #флаг для покупки
     for stick in sticks:
-        stick_count = stick_count + 1
+        stick_count = stick_count + 1 
 
         name = stick.find("div", class_="tooltip__name").text
         name_tuple = name_tuple + (name,)
-        price = stick.find("span", class_="tooltip__price").text
+        # price = stick.find("span", class_="tooltip__price").text
         wear = stick.find("span", class_="tooltip__percent").text
         wear_float = float(wear.replace('%',''))
         wear_tuple = wear_tuple + (float(wear.replace('%','')),)
         if wear_float > 0:
             buy = False
-        # print(f'название - {name}, цена = {price}, износ = {wear}')
 
     if stick_count < 4:
         while stick_count != 4:
             name_tuple = name_tuple + ('-',)
             wear_tuple = wear_tuple + ('NULL',)
             stick_count = stick_count + 1
-    print(f'listing number = {div["id"]}')
+
     if buy:
         print("Все стикеры целые, купить скин")
-        time.sleep(5)
-        buy_span = driver.find_element('xpath', f'//div[@id="{div["id"]}"]//span[contains(text(), "Купить")]')
-        buy_span.click()
-        time.sleep(5)
-        buy_conditions = driver.find_element('xpath', '//input[@id="market_buynow_dialog_accept_ssa"]')
-        buy_conditions.click()
-        time.sleep(5)
-        buy_real = driver.find_element('xpath', '//a[@id="market_buynow_dialog_purchase"]')
-        buy_real.click()
-        #купить скин
-        pass
+        try:
+            time.sleep(random() * (1.4 - 0.1) + 0.1)
+            buy_span = driver.find_element('xpath', f'//div[@id="{div["id"]}"]//span[contains(text(), "Купить")]')
+            buy_span.click()
+            time.sleep(random() * (1.4 - 0.1) + 0.1)
+            buy_conditions = driver.find_element('xpath', '//input[@id="market_buynow_dialog_accept_ssa"]')
+            buy_conditions.click()
+            time.sleep(random() * (1.4 - 0.1) + 0.1)
+            buy_real = driver.find_element('xpath', '//a[@id="market_buynow_dialog_purchase"]')
+            buy_real.click()
+        except NoSuchElementException:
+            print("buy элемент не найден, скин не купился")
     else:
         print("Есть тёртые стикеры, скипаем скин")
 
     data = (skin_name,) + (sum_price,) + (datetime.datetime.now(),) + name_tuple + wear_tuple
-    print(data)
+    # print(data)
     
     con = sl.connect('skins.db')
     sql = 'INSERT INTO history (skin_name, stick_price, date, stick1,stick2,stick3,stick4,wear1,wear2,wear3,wear4) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
