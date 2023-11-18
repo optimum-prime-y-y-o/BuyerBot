@@ -16,7 +16,7 @@ def start():
     options.add_argument(r'user-data-dir=D:\projects\buyerBot\User') #необходим полный путь
     options.add_argument('--profile-directory=Profile 23')
 
-    options.add_extension("extension_1_18_33_0.crx")
+    options.add_extension("путь_к_расширению")
     driver = webdriver.Chrome(options=options)
 
     url = 'https://steamcommunity.com/market/listings/730/AWP%20%7C%20Redline%20%28Field-Tested%29' #"https://steamcommunity.com/market/listings/730/Souvenir%20MAC-10%20%7C%20Sienna%20Damask%20%28Minimal%20Wear%29"
